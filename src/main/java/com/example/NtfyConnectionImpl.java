@@ -18,6 +18,14 @@ public class NtfyConnectionImpl implements NtfyConnection {
     private String currentTopic;
     private final ObjectMapper mapper = new ObjectMapper();
 
+    /**
+     * Creates a connection configured from environment variables.
+     *
+     * Reads `HOST_NAME` and `USER_ID` from the environment and sets the connection's topic
+     * to the value of `DEFAULT_TOPIC` if present, or `"mytopic"` otherwise.
+     *
+     * @throws NullPointerException if `HOST_NAME` or `USER_ID` is not set in the environment
+     */
     public NtfyConnectionImpl() {
         Dotenv dotenv = Dotenv.load();
         this.hostName = Objects.requireNonNull(dotenv.get("HOST_NAME"));
@@ -25,30 +33,65 @@ public class NtfyConnectionImpl implements NtfyConnection {
         this.currentTopic = dotenv.get("DEFAULT_TOPIC", "mytopic");
     }
 
+    /**
+     * Initialize a connection targeting the specified host, using default credentials and topic.
+     *
+     * <p>The instance will use userId "testuser" and topic "mytopic" unless changed.
+     *
+     * @param hostName the base URL of the ntfy host to connect to
+     */
     public NtfyConnectionImpl(String hostName) {
         this.hostName = hostName;
         this.userId = "testuser";
         this.currentTopic = "mytopic";
     }
 
+    /**
+     * Constructs a NtfyConnectionImpl configured with the specified host, user, and topic.
+     *
+     * @param hostName the base URL of the ntfy host to connect to
+     * @param userId   the user identifier to include with requests
+     * @param topic    the initial topic name to use for sending and receiving messages
+     */
     public NtfyConnectionImpl(String hostName, String userId, String topic) {
         this.hostName = hostName;
         this.userId = userId;
         this.currentTopic = topic;
     }
 
+    /**
+     * User identifier used in outgoing requests.
+     *
+     * @return the configured user identifier
+     */
     public String getUserId() {
         return userId;
     }
 
+    /**
+     * Gets the current topic used for sending and receiving messages.
+     *
+     * @return the name of the current topic
+     */
     public String getCurrentTopic() {
         return currentTopic;
     }
 
+    /**
+     * Updates the topic used for subsequent send and receive operations.
+     *
+     * @param topic the new topic name to set
+     */
     public void setCurrentTopic(String topic) {
         this.currentTopic = topic;
     }
 
+    /**
+     * Sends the given message to the current topic on the configured host and delivers whether the send succeeded to the callback.
+     *
+     * @param message the message body to post to the current topic
+     * @param callback consumer invoked with `true` if the HTTP response status code is in the 2xx range, `false` otherwise
+     */
     @Override
     public void send(String message, Consumer<Boolean> callback) {
         HttpRequest httpRequest = HttpRequest.newBuilder()
@@ -67,6 +110,13 @@ public class NtfyConnectionImpl implements NtfyConnection {
                 .thenAccept(callback);
     }
 
+    /**
+     * Subscribes to the current topic and delivers each successfully parsed message to the provided handler.
+     *
+     * <p>Lines received from the topic are parsed as JSON into {@code NtfyMessageDto}; messages that fail parsing are skipped.</p>
+     *
+     * @param messageHandler consumer invoked for each parsed {@code NtfyMessageDto} received from the topic
+     */
     @Override
     public void receive(Consumer<NtfyMessageDto> messageHandler) {
         HttpRequest httpRequest = HttpRequest.newBuilder()

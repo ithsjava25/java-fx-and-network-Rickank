@@ -45,6 +45,14 @@ public class HelloController {
             DateTimeFormatter.ofPattern("HH:mm:ss")
                     .withZone(ZoneId.systemDefault());
 
+    /**
+     * Initializes the controller by binding UI components to the model, configuring controls, and setting up the message view.
+     *
+     * <p>Sets the initial greeting and topic display, requests focus for the message input, binds the message list
+     * and the message input to the model, disables send/change-topic buttons when their inputs are empty, configures
+     * the message list cells to render chat bubbles aligned and styled for sent versus received messages, and adds
+     * a listener to auto-scroll to the latest message.</p>
+     */
     @FXML
     private void initialize() {
         messageLabel.setText(model.getGreeting());
@@ -124,6 +132,12 @@ public class HelloController {
         });
     }
 
+    /**
+     * Sends the composed message asynchronously and updates the UI according to the send result.
+     *
+     * On success, clears the message input and refocuses it. On failure, displays an error alert
+     * indicating the message could not be sent.
+     */
     @FXML
     private void sendMessage(ActionEvent actionEvent) {
         model.sendMessageAsync(success -> {
@@ -142,6 +156,11 @@ public class HelloController {
         });
     }
 
+    /**
+     * Updates the model's current topic from the topic input field and clears the input.
+     *
+     * If the topic input contains non-whitespace text, sets the model's current topic to that value and then clears the topic input field.
+     */
     @FXML
     private void changeTopic(ActionEvent actionEvent) {
         String newTopic = topicInput.getText();
